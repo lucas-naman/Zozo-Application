@@ -1,3 +1,4 @@
+import 'package:bday/models/api_response.dart';
 import 'package:bday/models/bday_for_listing.dart';
 import 'package:bday/views/bday_delete.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +17,8 @@ class _BDayListState extends State<BDayList> {
 
   BDayService get bdayService =>GetIt.I<BDayService>();
 
-  List<BDayForListing> bdays = [];
+  APIResponse<List<BDayForListing>> _apiResponse;
+  bool _isLoading = false;
 
   String formatDateTime (DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
@@ -24,8 +26,20 @@ class _BDayListState extends State<BDayList> {
 
   @override
   void initState() {
-    bdays = bdayService.getBDayList();
+    _fetchBDays();
     super.initState();
+  }
+
+  _fetchBDays() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    _apiResponse = await bdayService.getBDayList();
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -39,40 +53,52 @@ class _BDayListState extends State<BDayList> {
         },
         child: Icon(Icons.add),
       ),
-      body: ListView.separated(
-        separatorBuilder: (_, __) => Divider(height: 1, color: Colors.green),
-        itemBuilder: (_, index) {
-          return Dismissible(
-            key: ValueKey(bdays[index].id),
-            onDismissed: (direction) {
+      body: Builder(
+          builder: (_) {
+            if (_isLoading) {
+              return Center(child:CircularProgressIndicator());
+            }
 
-            },
-            confirmDismiss: (direction) async {
-              final result = await showDialog(
-                context: context,
-                builder: (_) => BDayDelete()
+            if (_apiResponse.error) {
+              return Center(child: Text(_apiResponse.errorMessage));
+            }
+
+            return ListView.separated(
+            separatorBuilder: (_, __) => Divider(height: 1, color: Colors.green),
+            itemBuilder: (_, index) {
+              return Dismissible(
+                key: ValueKey(_apiResponse.data[index].id),
+                onDismissed: (direction) {
+
+                },
+                confirmDismiss: (direction) async {
+                  final result = await showDialog(
+                    context: context,
+                    builder: (_) => BDayDelete()
+                  );
+                  return result;
+                },
+                background: Container(
+                  color: Colors.red,
+                  padding: EdgeInsets.only(left: 16),
+                  child: Align(child: Icon(Icons.delete, color: Colors.white), alignment: Alignment.centerLeft),
+                ),
+                child: ListTile(
+                  title: Text(
+                    _apiResponse.data[index].name + " " + _apiResponse.data[index].fname,
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                  ),
+                  subtitle: Text('Birthday : ${formatDateTime(_apiResponse.data[index].bday)}'),
+                  onTap: () {
+                    Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => BDayModify(bdayID: _apiResponse.data[index].id)));
+                  },
+                ),
               );
-              return result;
             },
-            background: Container(
-              color: Colors.red,
-              padding: EdgeInsets.only(left: 16),
-              child: Align(child: Icon(Icons.delete, color: Colors.white), alignment: Alignment.centerLeft),
-            ),
-            child: ListTile(
-              title: Text(
-                bdays[index].name + " " + bdays[index].fname,
-                style: TextStyle(color: Theme.of(context).primaryColor),
-              ),
-              subtitle: Text('Birthday : ${formatDateTime(bdays[index].bday)}'),
-              onTap: () {
-                Navigator.of(context)
-                .push(MaterialPageRoute(builder: (_) => BDayModify(bdayID: bdays[index].id)));
-              },
-            ),
-          );
-        },
-        itemCount: bdays.length),
+            itemCount: _apiResponse.data.length);
+          },
+        ),
     );
   }
 
