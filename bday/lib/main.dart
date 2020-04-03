@@ -1,7 +1,16 @@
 import 'package:bday/views/bday_list.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
+import 'package:bday/services/bday_service.dart';
 
-void main() => runApp(MyApp());
+void setupLocator() {
+  GetIt.I.registerLazySingleton(() => BDayService());
+}
+
+void main() {
+  setupLocator();
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.

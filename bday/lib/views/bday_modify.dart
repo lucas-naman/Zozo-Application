@@ -2,14 +2,22 @@ import 'package:flutter/material.dart';
 
 class BDayModify extends StatefulWidget {
 
+  final String bdayID;
+
+  BDayModify({this.bdayID});
+
   @override 
-  _BDayModifyState createState() => _BDayModifyState();
+  _BDayModifyState createState() => _BDayModifyState(bdayID: this.bdayID);
 
 }
 
 class _BDayModifyState extends State<BDayModify> {
 
   DateTime _date;
+  String bdayID;
+  bool get isEditing => bdayID != null;
+
+  _BDayModifyState({this.bdayID});
 
   String formatDateTime (DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
@@ -18,7 +26,7 @@ class _BDayModifyState extends State<BDayModify> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Create Birthday')),
+      appBar: AppBar(title: Text(isEditing ? 'Modify Birthday': 'Create Birthday')),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child : Column(
@@ -40,10 +48,16 @@ class _BDayModifyState extends State<BDayModify> {
 
             Container(height: 8),
 
-            Row(children: <Widget>[
-              Text(_date == null ? 'Nothing has been picked yet': formatDateTime(_date)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+              Text(
+                _date == null ? 'Nothing has been picked yet': 'Birthday: ${formatDateTime(_date)}',
+                style: TextStyle(fontSize: 16),
+              ),
               RaisedButton(
-                child: Text('Pick a date'),
+                child: Text('Pick a date', style: TextStyle(color: Colors.white)),
+                color: _date == null ? Theme.of(context).errorColor: Theme.of(context).primaryColor,
                 onPressed: () {
                   showDatePicker(
                     context: context,
